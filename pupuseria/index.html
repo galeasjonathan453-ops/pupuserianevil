@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pupusería – Sistema de Órdenes</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div id="login"><div class="card">
+  <h2>🫓 Pupusería</h2>
+  <div class="tabs"><button class="on" data-l="fCli">Cliente</button><button data-l="fAdm">Administrador</button></div>
+  <form id="fCli"><input id="lcn" placeholder="Tu nombre" required><button class="b g">Entrar como cliente</button></form>
+  <form id="fAdm" class="hide"><input id="lu" placeholder="Usuario" autocomplete="username"><input id="lp" type="password" placeholder="Contraseña" autocomplete="current-password"><button class="b">Entrar como administrador</button>
+  <small>Acceso inicial: admin / admin123 (cámbiala al entrar)</small></form>
+  <p id="lerr" style="color:#b91c1c;margin:8px 0 0"></p>
+</div></div>
+<header id="hd" class="hide">
+  <div class="row" style="justify-content:space-between;margin:0 0 8px"><h1 style="margin:0">🫓 Pupusería · Sistema de Órdenes</h1>
+  <div><span id="quien"></span> <button class="b w adm" onclick="cambiarClave()">Cambiar clave</button> <button class="b w" onclick="salir()">Salir</button></div></div>
+  <nav>
+    <button data-t="orden" class="on">Nueva orden</button>
+    <button data-t="pedidos" class="adm">Pedidos</button>
+    <button data-t="ventas" class="adm">Ventas y ganancias</button>
+    <button data-t="productos">Menú / Precios</button>
+    <button data-t="bitacora" class="adm">Bitácora</button>
+  </nav>
+</header>
+<main id="app" class="hide">
+  <section id="orden" class="on">
+    <div class="card">
+      <div class="row">
+        <input id="cliente" placeholder="Cliente / Mesa" style="flex:1">
+        <select id="tipo"><option>Para llevar</option><option>Comer aquí</option></select>
+      </div>
+      <div id="menu"></div>
+      <div class="tot">Total: <span id="total">$0.00</span></div>
+      <button class="b g" id="guardar" style="width:100%">Guardar orden</button>
+    </div>
+  </section>
+
+  <section id="pedidos"><div class="card wrap" id="listaPedidos"></div></section>
+
+  <section id="ventas">
+    <div class="card row">
+      Desde <input type="date" id="desde"> Hasta <input type="date" id="hasta">
+      <button class="b" id="btnXls">⬇ Excel (.xls)</button>
+      <button class="b" id="btnHtml">⬇ Reporte HTML</button>
+    </div>
+    <div class="stats" id="stats"></div>
+    <div class="card wrap" id="resumen"></div>
+  </section>
+
+  <section id="productos">
+    <div class="card">
+      <div class="row adm">
+        <input id="pn" placeholder="Producto" style="flex:2">
+        <input id="pp" type="number" step="0.01" min="0" placeholder="Precio venta" style="flex:1">
+        <input id="pc" type="number" step="0.01" min="0" placeholder="Costo" style="flex:1">
+        <button class="b" id="addP">Agregar</button>
+      </div>
+      <div class="wrap" id="listaProd"></div>
+    </div>
+  </section>
+<section id="bitacora"><div class="card wrap" id="listaBit"></div></section>
+</main>
+<div id="toast"></div>
+
+<script src="js/util.js"></script>
+<script src="js/db.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/bitacora.js"></script>
+<script src="js/navegacion.js"></script>
+<script src="js/orden.js"></script>
+<script src="js/pedidos.js"></script>
+<script src="js/ventas.js"></script>
+<script src="js/exportar.js"></script>
+<script src="js/productos.js"></script>
+</body>
+</html>

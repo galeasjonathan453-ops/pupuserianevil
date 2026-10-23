@@ -1,0 +1,21 @@
+PUPUSERÍA – Sistema de Órdenes
+==============================
+Abre index.html en el navegador (doble clic). No necesita servidor ni internet.
+
+Estructura
+----------
+index.html        Estructura de la página (login, menú, secciones)
+css/styles.css    Todos los estilos
+js/util.js        Funciones auxiliares ($, money, toast, esc...)
+js/db.js          Base de datos IndexedDB y datos iniciales
+js/auth.js        Login, sesión, cambio de contraseña
+js/bitacora.js    Bitácora de accesos
+js/navegacion.js  Cambio de pestañas
+js/orden.js       Nueva orden y carrito
+js/pedidos.js     Lista de pedidos
+js/ventas.js      Ventas y ganancias
+js/exportar.js    Descarga en Excel y reporte HTML
+js/productos.js   Menú / precios
+
+Acceso inicial de administrador: admin / admin123
+IMPORTANTE: el orden de los <script> en index.html importa; no lo cambies.
