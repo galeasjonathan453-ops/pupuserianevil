@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pupusería – Sistema de Órdenes</title>
+<style>
+:root{--c:#c2410c;--bg:#fff7ed;--bd:#fed7aa;--tx:#292524}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--tx)}
+header{background:var(--c);color:#fff;padding:12px 16px}
+header h1{margin:0 0 8px;font-size:1.3rem}
+nav{display:flex;gap:6px;flex-wrap:wrap}
+nav button{background:#ffedd5;color:var(--c);border:0;padding:8px 14px;border-radius:8px;font-weight:600;cursor:pointer}
+nav button.on{background:#fff;box-shadow:0 0 0 2px #fdba74}
+main{max-width:900px;margin:auto;padding:14px}
+section{display:none}section.on{display:block}
+.card{background:#fff;border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:12px}
+input,select,button.b{font:inherit;padding:8px;border:1px solid #d6d3d1;border-radius:8px}
+button.b{background:var(--c);color:#fff;border:0;font-weight:600;cursor:pointer}
+button.g{background:#15803d}button.r{background:#b91c1c}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+.item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f5f5f4}
+.q{display:flex;align-items:center;gap:8px}
+.q button{width:34px;height:34px;border-radius:50%;border:1px solid var(--c);background:#fff;color:var(--c);font-size:1.1rem;cursor:pointer}
+.tot{font-size:1.4rem;font-weight:700;text-align:right;margin:8px 0}
+table{width:100%;border-collapse:collapse;font-size:.92rem}
+th,td{padding:6px;border-bottom:1px solid #f5f5f4;text-align:left}
+th{background:#ffedd5}
+.wrap{overflow-x:auto}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:12px}
+.stat{background:#fff;border:1px solid var(--bd);border-radius:12px;padding:12px}
+.stat b{display:block;font-size:1.4rem}
+.pos{color:#15803d}
+.hide{display:none!important}body.cli .adm{display:none!important}
+#login{max-width:380px;margin:8vh auto;padding:14px}#login h2{text-align:center;margin-top:0}
+.tabs{display:flex;gap:6px;margin-bottom:10px}
+.tabs button{flex:1;padding:10px;border:1px solid var(--c);background:#fff;color:var(--c);border-radius:8px;font-weight:600;cursor:pointer}
+.tabs button.on{background:var(--c);color:#fff}
+#login input{width:100%;margin-bottom:8px}#login button.b{width:100%}
+.w{background:#fff!important;color:var(--c)!important}
+#toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#292524;color:#fff;padding:10px 18px;border-radius:8px;display:none}
+</style>
+</head>
+<body>
+<div id="login"><div class="card">
+  <h2>🫓 Pupusería</h2>
+  <div class="tabs"><button class="on" data-l="fCli">Cliente</button><button data-l="fAdm">Administrador</button></div>
+  <form id="fCli"><input id="lcn" placeholder="Tu nombre" required><button class="b g">Entrar como cliente</button></form>
+  <form id="fAdm" class="hide"><input id="lu" placeholder="Usuario" autocomplete="username"><input id="lp" type="password" placeholder="Contraseña" autocomplete="current-password"><button class="b">Entrar como administrador</button>
+  <small>Acceso inicial: admin / admin123 (cámbiala al entrar)</small></form>
+  <p id="lerr" style="color:#b91c1c;margin:8px 0 0"></p>
+</div></div>
+<header id="hd" class="hide">
+  <div class="row" style="justify-content:space-between;margin:0 0 8px"><h1 style="margin:0">🫓 Pupusería · Sistema de Órdenes</h1>
+  <div><span id="quien"></span> <button class="b w adm" onclick="cambiarClave()">Cambiar clave</button> <button class="b w" onclick="salir()">Salir</button></div></div>
+  <nav>
+    <button data-t="orden" class="on">Nueva orden</button>
+    <button data-t="pedidos" class="adm">Pedidos</button>
+    <button data-t="ventas" class="adm">Ventas y ganancias</button>
+    <button data-t="productos">Menú / Precios</button>
+    <button data-t="bitacora" class="adm">Bitácora</button>
+  </nav>
+</header>
+<main id="app" class="hide">
+  <section id="orden" class="on">
+    <div class="card">
+      <div class="row">
+        <input id="cliente" placeholder="Cliente / Mesa" style="flex:1">
+        <select id="tipo"><option>Para llevar</option><option>Comer aquí</option></select>
+      </div>
+      <div id="menu"></div>
+      <div class="tot">Total: <span id="total">$0.00</span></div>
+      <button class="b g" id="guardar" style="width:100%">Guardar orden</button>
+    </div>
+  </section>
+
+  <section id="pedidos"><div class="card wrap" id="listaPedidos"></div></section>
+
+  <section id="ventas">
+    <div class="card row">
+      Desde <input type="date" id="desde"> Hasta <input type="date" id="hasta">
+      <button class="b" id="btnXls">⬇ Excel (.xls)</button>
+      <button class="b" id="btnHtml">⬇ Reporte HTML</button>
+    </div>
+    <div class="stats" id="stats"></div>
+    <div class="card wrap" id="resumen"></div>
+  </section>
+
+  <section id="productos">
+    <div class="card">
+      <div class="row adm">
+        <input id="pn" placeholder="Producto" style="flex:2">
+        <input id="pp" type="number" step="0.01" min="0" placeholder="Precio venta" style="flex:1">
+        <input id="pc" type="number" step="0.01" min="0" placeholder="Costo" style="flex:1">
+        <button class="b" id="addP">Agregar</button>
+      </div>
+      <div class="wrap" id="listaProd"></div>
+    </div>
+  </section>
+<section id="bitacora"><div class="card wrap" id="listaBit"></div></section>
+</main>
+<div id="toast"></div>
+
+<script>
+const $=s=>document.querySelector(s);
+const money=n=>'$'+Number(n).toFixed(2);
+const hoy=()=>new Date().toLocaleDateString('sv');
+const toast=m=>{const t=$('#toast');t.textContent=m;t.style.display='block';setTimeout(()=>t.style.display='none',1800)};
+const esc=s=>String(s).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+
+/* ---------- Base de datos (IndexedDB) ---------- */
+let db;
+const wrap=r=>new Promise((ok,no)=>{r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)});
+const st=(n,m='readonly')=>db.transaction(n,m).objectStore(n);
+const all=n=>wrap(st(n).getAll());
+const put=(n,v)=>wrap(st(n,'readwrite').put(v));
+const del=(n,id)=>wrap(st(n,'readwrite').delete(id));
+const open=indexedDB.open('pupuseria',2);
+open.onupgradeneeded=e=>{const d=e.target.result;
+  for(const n of ['productos','pedidos','usuarios','bitacora'])if(!d.objectStoreNames.contains(n))d.createObjectStore(n,{keyPath:'id',autoIncrement:true});
+};
+open.onsuccess=async e=>{
+  db=e.target.result;$('#lerr').textContent='';
+  db.onversionchange=()=>{db.close();alert('La página se actualizó en otra pestaña. Recarga con F5.')};
+  if(!(await all('productos')).length){
+    for(const p of [['Pupusa revuelta',0.75,0.35],['Pupusa de queso',0.75,0.33],['Pupusa de frijol con queso',0.75,0.30],['Pupusa de chicharrón',0.75,0.38],['Pupusa de loroco',0.85,0.40],['Refresco',0.75,0.30],['Café',0.50,0.15]])
+      await put('productos',{nombre:p[0],precio:p[1],costo:p[2]});
+  }
+  if(!(await all('usuarios')).length)await put('usuarios',{usuario:'admin',hash:await hash('admin123'),rol:'admin'});
+  $('#desde').value=$('#hasta').value=hoy();
+};
+open.onerror=()=>{$('#lerr').textContent='No se pudo abrir la base de datos. Prueba en otro navegador o fuera de modo privado.'};
+open.onblocked=()=>{$('#lerr').textContent='La base de datos se está actualizando. Cierra las OTRAS pestañas o ventanas de esta página (la versión anterior) y espera unos segundos.'};
+
+/* ---------- Login y sesión ---------- */
+let ses=null;
+const isAdm=()=>!!ses&&ses.rol=='admin';
+async function hash(s){
+  try{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('pup:'+s));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}
+  catch(e){let h=5381;for(const c of 'pup:'+s)h=(h*33)^c.charCodeAt(0);return 'f'+(h>>>0).toString(16)}
+}
+const log=(u,rol,ok)=>put('bitacora',{fecha:new Date().toLocaleString('sv'),usuario:u,rol,resultado:ok?'Exitoso':'Fallido'});
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x==b));
+  ['fCli','fAdm'].forEach(f=>$('#'+f).classList.toggle('hide',f!=b.dataset.l));$('#lerr').textContent='';
+});
+$('#fCli').onsubmit=async e=>{e.preventDefault();if(!db)return $('#lerr').textContent='La base de datos aún no está lista. Cierra las otras pestañas de esta página y recarga con F5.';const n=$('#lcn').value.trim();if(!n)return;
+  await log(n,'cliente',true);entrar({usuario:n,rol:'cliente'})};
+$('#fAdm').onsubmit=async e=>{e.preventDefault();if(!db)return $('#lerr').textContent='La base de datos aún no está lista. Cierra las otras pestañas de esta página y recarga con F5.';
+  const u=$('#lu').value.trim(),h=await hash($('#lp').value);
+  const us=(await all('usuarios')).find(x=>x.usuario===u&&x.hash===h);
+  await log(u||'(vacío)','admin',!!us);
+  if(!us)return $('#lerr').textContent='Usuario o contraseña incorrectos';
+  entrar(us)};
+function entrar(u){
+  ses=u;$('#lerr').textContent='';cart={};
+  document.body.classList.toggle('cli',!isAdm());
+  $('#login').classList.add('hide');$('#hd').classList.remove('hide');$('#app').classList.remove('hide');
+  $('#quien').textContent=(isAdm()?'👑 ':'👤 ')+u.usuario;
+  $('#cliente').value=isAdm()?'':u.usuario;
+  document.querySelector('nav button').click();
+}
+function salir(){
+  ses=null;cart={};$('#hd').classList.add('hide');$('#app').classList.add('hide');$('#login').classList.remove('hide');
+  $('#lcn').value=$('#lu').value=$('#lp').value='';
+}
+async function cambiarClave(){
+  if(!isAdm())return;const n=prompt('Nueva contraseña (mínimo 6 caracteres):');
+  if(!n||n.length<6)return n&&alert('Debe tener al menos 6 caracteres');
+  ses.hash=await hash(n);await put('usuarios',ses);toast('Contraseña actualizada ✔');
+}
+async function drawBit(){
+  const b=(await all('bitacora')).reverse().slice(0,200);
+  $('#listaBit').innerHTML='<table><tr><th>Fecha y hora</th><th>Usuario</th><th>Rol</th><th>Resultado</th></tr>'+
+  b.map(x=>`<tr><td>${x.fecha}</td><td>${esc(x.usuario)}</td><td>${x.rol}</td><td>${x.resultado}</td></tr>`).join('')+'</table>';
+}
+
+/* ---------- Navegación ---------- */
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
+  if(b.classList.contains('adm')&&!isAdm())return;
+  document.querySelectorAll('nav button,section').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');$('#'+b.dataset.t).classList.add('on');refresh();
+});
+
+/* ---------- Nueva orden ---------- */
+let prods=[],cart={};
+async function refresh(){prods=await all('productos');drawMenu();drawProd();if(isAdm()){drawPedidos();drawVentas();drawBit()}}
+function drawMenu(){
+  $('#menu').innerHTML=prods.map(p=>`<div class="item"><div><b>${esc(p.nombre)}</b><br><small>${money(p.precio)}</small></div>
+  <div class="q"><button onclick="chg(${p.id},-1)">−</button><b>${cart[p.id]||0}</b><button onclick="chg(${p.id},1)">+</button></div></div>`).join('');
+  $('#total').textContent=money(prods.reduce((s,p)=>s+(cart[p.id]||0)*p.precio,0));
+}
+function chg(id,d){cart[id]=Math.max(0,(cart[id]||0)+d);drawMenu()}
+$('#guardar').onclick=async()=>{
+  const items=prods.filter(p=>cart[p.id]>0).map(p=>({nombre:p.nombre,cant:cart[p.id],precio:p.precio,costo:p.costo}));
+  if(!items.length)return toast('Agrega al menos un producto');
+  await put('pedidos',{fecha:new Date().toLocaleString('sv'),cliente:$('#cliente').value.trim()||'Mostrador',tipo:$('#tipo').value,estado:'Pendiente',items});
+  cart={};$('#cliente').value=isAdm()?'':ses.usuario;toast('Orden guardada ✔');refresh();
+};
+
+/* ---------- Pedidos ---------- */
+const totalP=p=>p.items.reduce((s,i)=>s+i.cant*i.precio,0);
+async function drawPedidos(){
+  const ps=(await all('pedidos')).reverse();
+  $('#listaPedidos').innerHTML=ps.length?`<table><tr><th>#</th><th>Fecha</th><th>Cliente</th><th>Detalle</th><th>Total</th><th>Estado</th><th></th></tr>`+
+  ps.map(p=>`<tr><td>${p.id}</td><td>${p.fecha}</td><td>${esc(p.cliente)}<br><small>${p.tipo}</small></td>
+  <td>${p.items.map(i=>i.cant+' × '+esc(i.nombre)).join('<br>')}</td><td>${money(totalP(p))}</td>
+  <td><button class="b ${p.estado=='Entregado'?'g':''}" onclick="estado(${p.id})">${p.estado}</button></td>
+  <td><button class="b r" onclick="delP(${p.id})">✕</button></td></tr>`).join('')+'</table>':'Aún no hay pedidos.';
+}
+async function estado(id){if(!isAdm())return;const p=(await all('pedidos')).find(x=>x.id==id);p.estado=p.estado=='Pendiente'?'Entregado':'Pendiente';await put('pedidos',p);drawPedidos()}
+async function delP(id){if(!isAdm())return;if(confirm('¿Eliminar pedido #'+id+'?')){await del('pedidos',id);refresh()}}
+
+/* ---------- Ventas ---------- */
+async function rango(){
+  const d=$('#desde').value,h=$('#hasta').value;
+  return (await all('pedidos')).filter(p=>p.fecha.slice(0,10)>=d&&p.fecha.slice(0,10)<=h);
+}
+async function drawVentas(){
+  const ps=await rango();let v=0,c=0,n=0;const por={};
+  ps.forEach(p=>p.items.forEach(i=>{v+=i.cant*i.precio;c+=i.cant*i.costo;n+=i.cant;
+    const r=por[i.nombre]=por[i.nombre]||{cant:0,v:0,c:0};r.cant+=i.cant;r.v+=i.cant*i.precio;r.c+=i.cant*i.costo}));
+  $('#stats').innerHTML=`<div class="stat">Pedidos<b>${ps.length}</b></div><div class="stat">Unidades<b>${n}</b></div>
+  <div class="stat">Ventas<b>${money(v)}</b></div><div class="stat">Costos<b>${money(c)}</b></div><div class="stat">Ganancia<b class="pos">${money(v-c)}</b></div>`;
+  $('#resumen').innerHTML=`<table><tr><th>Producto</th><th>Cant.</th><th>Ventas</th><th>Ganancia</th></tr>`+
+  Object.entries(por).map(([k,r])=>`<tr><td>${esc(k)}</td><td>${r.cant}</td><td>${money(r.v)}</td><td>${money(r.v-r.c)}</td></tr>`).join('')+'</table>';
+  return{ps,v,c,n,por};
+}
+$('#desde').onchange=$('#hasta').onchange=drawVentas;
+
+function dl(name,type,txt){
+  const url=URL.createObjectURL(new Blob(['\ufeff'+txt],{type:type+';charset=utf-8'}));
+  const a=document.createElement('a');a.href=url;a.download=name;a.style.display='none';
+  document.body.appendChild(a);a.click();
+  setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url)},1500);
+}
+
+/* Excel (SpreadsheetML) con fórmulas que calculan ventas, costos y ganancia */
+$('#btnXls').onclick=async()=>{if(!isAdm())return;
+  const ps=await rango();if(!ps.length)return alert('No hay ventas entre el '+$('#desde').value+' y el '+$('#hasta').value+'. Cambia las fechas Desde y Hasta, o guarda primero una orden.');
+  const S=(v,s='')=>`<Cell${s?` ss:StyleID="${s}"`:''}><Data ss:Type="String">${esc(v)}</Data></Cell>`;
+  const N=(v,s='')=>`<Cell${s?` ss:StyleID="${s}"`:''}><Data ss:Type="Number">${v}</Data></Cell>`;
+  const F=(f,v,s='m')=>`<Cell ss:StyleID="${s}" ss:Formula="${f}"><Data ss:Type="Number">${v}</Data></Cell>`;
+  let rows=`<Row>${['Fecha','Pedido','Cliente','Producto','Cantidad','Precio unit.','Costo unit.','Venta','Costo total','Ganancia'].map(h=>S(h,'h')).join('')}</Row>`;
+  let tc=0,tv=0,tk=0;
+  ps.forEach(p=>p.items.forEach(i=>{
+    const v=i.cant*i.precio,k=i.cant*i.costo;tc+=i.cant;tv+=v;tk+=k;
+    rows+=`<Row>${S(p.fecha)}${N(p.id)}${S(p.cliente)}${S(i.nombre)}${N(i.cant)}${N(i.precio,'m')}${N(i.costo,'m')}${F('=RC[-3]*RC[-2]',v)}${F('=RC[-4]*RC[-2]',k)}${F('=RC[-2]-RC[-1]',v-k)}</Row>`;
+  }));
+  rows+=`<Row>${S('TOTALES','b')}<Cell/><Cell/><Cell/>${F('=SUM(R2C:R[-1]C)',tc,'b')}<Cell/><Cell/>${F('=SUM(R2C:R[-1]C)',tv,'b')}${F('=SUM(R2C:R[-1]C)',tk,'b')}${F('=SUM(R2C:R[-1]C)',tv-tk,'b')}</Row>`;
+  const xml=`<?xml version="1.0" encoding="UTF-8"?><?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+<Styles><Style ss:ID="h"><Font ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#C2410C" ss:Pattern="Solid"/></Style>
+<Style ss:ID="m"><NumberFormat ss:Format="$#,##0.00"/></Style>
+<Style ss:ID="b"><Font ss:Bold="1"/><Interior ss:Color="#FED7AA" ss:Pattern="Solid"/><NumberFormat ss:Format="$#,##0.00"/></Style></Styles>
+<Worksheet ss:Name="Ventas"><Table><Column ss:Width="110"/><Column ss:Width="50"/><Column ss:Width="100"/><Column ss:Width="160"/><Column ss:Width="60" ss:Span="5"/>${rows}</Table></Worksheet></Workbook>`;
+  dl(`ventas_pupuseria_${$('#desde').value}_a_${$('#hasta').value}.xls`,'application/vnd.ms-excel',xml);
+};
+
+/* Reporte HTML descargable */
+$('#btnHtml').onclick=async()=>{if(!isAdm())return;
+  const{ps,v,c,n,por}=await drawVentas();if(!ps.length)return alert('No hay ventas entre el '+$('#desde').value+' y el '+$('#hasta').value+'. Cambia las fechas Desde y Hasta, o guarda primero una orden.');
+  const html=`<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Reporte de ventas</title>
+<style>body{font-family:Arial;max-width:800px;margin:20px auto}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:6px;text-align:left}th{background:#c2410c;color:#fff}</style></head><body>
+<h1>🫓 Reporte de ventas – Pupusería</h1><p>Del ${$('#desde').value} al ${$('#hasta').value}</p>
+<p><b>Pedidos:</b> ${ps.length} · <b>Unidades:</b> ${n} · <b>Ventas:</b> ${money(v)} · <b>Costos:</b> ${money(c)} · <b>Ganancia:</b> ${money(v-c)}</p>
+<h2>Por producto</h2><table><tr><th>Producto</th><th>Cant.</th><th>Ventas</th><th>Ganancia</th></tr>${Object.entries(por).map(([k,r])=>`<tr><td>${esc(k)}</td><td>${r.cant}</td><td>${money(r.v)}</td><td>${money(r.v-r.c)}</td></tr>`).join('')}</table>
+<h2>Detalle de pedidos</h2><table><tr><th>#</th><th>Fecha</th><th>Cliente</th><th>Detalle</th><th>Total</th></tr>${ps.map(p=>`<tr><td>${p.id}</td><td>${p.fecha}</td><td>${esc(p.cliente)}</td><td>${p.items.map(i=>i.cant+' × '+esc(i.nombre)).join(', ')}</td><td>${money(totalP(p))}</td></tr>`).join('')}</table></body></html>`;
+  dl(`reporte_ventas_${$('#desde').value}.html`,'text/html',html);
+};
+
+/* ---------- Menú / Precios ---------- */
+function drawProd(){
+  $('#listaProd').innerHTML=`<table><tr><th>Producto</th><th>Precio</th><th class="adm">Costo</th><th class="adm">Margen</th><th class="adm"></th></tr>`+
+  prods.map(p=>`<tr><td>${esc(p.nombre)}</td><td>${money(p.precio)}</td><td class="adm">${money(p.costo)}</td><td class="adm">${money(p.precio-p.costo)}</td><td class="adm"><button class="b r" onclick="delProd(${p.id})">✕</button></td></tr>`).join('')+'</table>';
+}
+$('#addP').onclick=async()=>{if(!isAdm())return;
+  const n=$('#pn').value.trim(),p=parseFloat($('#pp').value),c=parseFloat($('#pc').value);
+  if(!n||isNaN(p)||isNaN(c))return toast('Completa nombre, precio y costo');
+  await put('productos',{nombre:n,precio:p,costo:c});$('#pn').value=$('#pp').value=$('#pc').value='';refresh();
+};
+async function delProd(id){if(!isAdm())return;if(confirm('¿Quitar del menú?')){await del('productos',id);delete cart[id];refresh()}}
+</script>
+</body>
+</html>
